@@ -4,7 +4,7 @@ English | [日本語](README.ja.md)
 
 A single-file, dependency-free visualizer for the Lorenz attractor. It integrates the Lorenz equations in real time in your browser and draws the trajectory in 3D. You can rotate it, change the parameters, and watch two almost identical starting points drift apart (the butterfly effect).
 
-> The interface is in Japanese.
+> The interface is available in English and Japanese. See [Language](#language).
 
 ## What it shows
 
@@ -26,31 +26,45 @@ With the classic values σ = 10, ρ = 28, β = 8/3, the system is chaotic. There
 - Live sliders for σ, ρ, β, simulation speed, trail length, and the number of orbits
 - A log-scale plot of the distance between two orbits (shown when two or more orbits are running)
 - Markers for the fixed points C₊ and C₋ (can be switched off)
+- English and Japanese interface in one file, with a language switch
 - Respects `prefers-reduced-motion`: auto-rotation starts off and the default speed is lower
 
 ## Presets
 
-| Preset (label in the UI) | What it does |
+| Preset | What it does |
 | --- | --- |
-| 一本の軌跡 (One trajectory) | Draws one long trail from a single starting point. |
-| ほぼ同じ2点 (Two nearly identical points) | Runs two points whose starting values differ by 1e-5. They overlap at first, then split apart. The distance plot shows the exponential growth of the gap. |
-| 点の群れ (A swarm) | Places 160 points inside a tiny ball and lets them stretch across the whole attractor. |
+| One trajectory | Draws one long trail from a single starting point. |
+| Two nearly identical points | Runs two points whose starting values differ by 1e-5. They overlap at first, then split apart. The distance plot shows the exponential growth of the gap. |
+| A swarm | Places 160 points inside a tiny ball and lets them stretch across the whole attractor. |
 
 ## Controls
 
-| Control (label in the UI) | What it does |
+| Control | What it does |
 | --- | --- |
-| σ (プラントル数), ρ (加熱の強さ), β (形状係数) | The three parameters of the equations. Standard values: 10, 28, 8/3. |
-| 標準値に戻す | Resets σ, ρ, β to the standard values. |
-| 進む速さ | Integration steps per animation frame (1–20). |
-| 軌跡の長さ | Number of points kept in each trail (20–12000). |
-| 軌道の数 | Number of simultaneous orbits (1–300). The total number of drawn points is capped at 45,000. |
-| 自動で回す | Toggles auto-rotation. |
-| 不動点を表示 | Toggles the markers for the fixed points. |
-| 一時停止 / 再開 | Pauses or resumes the simulation. |
-| やり直し | Restarts from a fresh starting point. |
+| 日本語 / English | Switches the interface language. |
+| σ (Prandtl number), ρ (heating strength), β (geometry factor) | The three parameters of the equations. Standard values: 10, 28, 8/3. |
+| Reset to standard values | Resets σ, ρ, β to the standard values. |
+| Speed | Integration steps per animation frame (1–20). |
+| Trail length | Number of points kept in each trail (20–12000). |
+| Number of orbits | Number of simultaneous orbits (1–300). The total number of drawn points is capped at 45,000. |
+| Auto-rotate | Toggles auto-rotation. |
+| Show fixed points | Toggles the markers for the fixed points. |
+| Pause / Resume | Pauses or resumes the simulation. |
+| Restart | Restarts from a fresh starting point. |
 
 Try lowering ρ to about 10: the orbit no longer wanders between the two lobes and settles onto one of the fixed points.
+
+## Language
+
+The interface is available in English and Japanese. One file serves both; there are no separate pages.
+
+The language is chosen in this order:
+
+1. `?lang=en` or `?lang=ja` in the URL
+2. Your last choice with the 日本語 / English buttons, kept in the browser's local storage
+3. Your browser language: Japanese if it is Japanese, English otherwise
+
+Pressing a button also puts `?lang=` into the address bar when the page is served over HTTP(S), so you can copy the URL to share the page in a specific language.
 
 ## Usage
 
