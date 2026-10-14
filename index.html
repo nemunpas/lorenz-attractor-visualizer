@@ -1,0 +1,600 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ローレンツ・アトラクタ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
+<style>
+/* 配置: 左に全面キャンバスのステージ、右に操作パネル。狭い画面では縦に積む。暗い背景に加算合成の光の軌跡という一つの世界に絞った単一テーマ */
+:root {
+  --ink: #060912;
+  --ink2: #0d1424;
+  --line: #1f2b45;
+  --fg: #dfe6f2;
+  --dim: #8794ae;
+  --amber: #ffb454;
+  --teal: #4fd6c8;
+  --violet: #6f6bff;
+  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+html { height: 100%; background: var(--ink); }
+body {
+  height: 100%;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--ink);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 14px;
+  line-height: 1.6;
+  padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.app {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 340px;
+  gap: 14px;
+}
+.stage {
+  position: relative;
+  min-width: 0;
+  min-height: 320px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--ink);
+}
+#cv { position: absolute; inset: 0; width: 100%; height: 100%; display: block; touch-action: none; cursor: grab; }
+#cv:active { cursor: grabbing; }
+.title { position: absolute; left: 16px; top: 14px; pointer-events: none; }
+.title h1 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 26px;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+.eq { margin: 8px 0 0; font-family: var(--font-mono); font-size: 12px; line-height: 1.7; color: var(--dim); }
+.readout {
+  position: absolute; left: 16px; bottom: 12px; right: 16px;
+  font-family: var(--font-mono); font-size: 12px; color: var(--dim);
+  font-variant-numeric: tabular-nums; pointer-events: none;
+}
+.hint { position: absolute; right: 16px; top: 16px; font-size: 12px; color: var(--dim); pointer-events: none; text-align: right; }
+
+.panel {
+  min-width: 0;
+  display: flex; flex-direction: column; gap: 20px;
+  padding: 16px;
+  background: var(--ink2);
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  overflow-y: auto;
+}
+.panel h2 {
+  margin: 0 0 8px;
+  font-size: 12px; font-weight: 500; color: var(--dim);
+  letter-spacing: 0.1em;
+}
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+button {
+  font: inherit; color: var(--fg);
+  background: transparent;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px 12px;
+  cursor: pointer;
+}
+button:hover { border-color: var(--dim); }
+button[aria-pressed="true"] { border-color: var(--amber); color: var(--amber); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+.note { margin: 8px 0 0; font-size: 12px; color: var(--dim); }
+.row { display: grid; grid-template-columns: 1fr auto; align-items: baseline; column-gap: 8px; margin-bottom: 8px; }
+.row label { font-size: 13px; }
+.row output { font-family: var(--font-mono); font-size: 12px; color: var(--amber); font-variant-numeric: tabular-nums; }
+.row input[type=range] { grid-column: 1 / -1; }
+input[type=range] { -webkit-appearance: none; appearance: none; width: 100%; height: 22px; margin: 0; background: transparent; }
+input[type=range]::-webkit-slider-runnable-track { height: 2px; background: var(--line); }
+input[type=range]::-moz-range-track { height: 2px; background: var(--line); }
+input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; margin-top: -6px; border-radius: 50%; background: var(--amber); border: 0; }
+input[type=range]::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--amber); border: 0; }
+.checks { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 4px; }
+.checks label { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; margin: 0; }
+.actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.chart { display: block; width: 100%; height: 132px; }
+
+@media (max-width: 899px) {
+  html, body { height: auto; }
+  body { display: block; }
+  .app { display: flex; flex-direction: column; }
+  .stage { height: 64vh; min-height: 340px; max-height: 620px; }
+  .panel { overflow: visible; }
+  .title h1 { font-size: 22px; }
+}
+@media (max-width: 520px) {
+  .eq { display: none; }
+  .hint { top: auto; bottom: 34px; right: 16px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <main class="stage" id="stage">
+    <canvas id="cv" role="img" aria-label="ローレンツ方程式の解が描く蝶の形の軌跡"></canvas>
+    <div class="title">
+      <h1>ローレンツ・アトラクタ</h1>
+      <p class="eq">dx/dt = σ(y − x)<br>dy/dt = x(ρ − z) − y<br>dz/dt = xy − βz</p>
+    </div>
+    <div class="hint">ドラッグで回転 / ホイールかピンチで拡大</div>
+    <div class="readout" id="readout"></div>
+  </main>
+
+  <aside class="panel" aria-label="操作パネル">
+    <section>
+      <h2>見せ方</h2>
+      <div class="seg" role="group" aria-label="プリセット">
+        <button type="button" data-preset="single" aria-pressed="true">一本の軌跡</button>
+        <button type="button" data-preset="pair" aria-pressed="false">ほぼ同じ2点</button>
+        <button type="button" data-preset="swarm" aria-pressed="false">点の群れ</button>
+      </div>
+      <p class="note" id="presetNote"></p>
+    </section>
+
+    <section>
+      <h2>方程式の係数</h2>
+      <div class="row"><label for="inS">σ(プラントル数)</label><output id="outS"></output><input id="inS" type="range" min="0.5" max="30" step="any" value="10"></div>
+      <div class="row"><label for="inR">ρ(加熱の強さ)</label><output id="outR"></output><input id="inR" type="range" min="0.5" max="60" step="any" value="28"></div>
+      <div class="row"><label for="inB">β(形状係数)</label><output id="outB"></output><input id="inB" type="range" min="0.3" max="6" step="any" value="2.6666667"></div>
+      <div class="actions"><button type="button" id="btnStd">標準値に戻す</button></div>
+      <p class="note">ρを10前後まで下げると、軌道は不動点C₊かC₋に落ち着きます。</p>
+    </section>
+
+    <section>
+      <h2>描画</h2>
+      <div class="row"><label for="inSpeed">進む速さ</label><output id="outSpeed"></output><input id="inSpeed" type="range" min="1" max="20" step="1" value="6"></div>
+      <div class="row"><label for="inL">軌跡の長さ</label><output id="outL"></output><input id="inL" type="range" min="20" max="12000" step="10" value="7000"></div>
+      <div class="row"><label for="inN">軌道の数</label><output id="outN"></output><input id="inN" type="range" min="1" max="300" step="1" value="1"></div>
+      <div class="checks">
+        <label><input id="chkAuto" type="checkbox" checked>自動で回す</label>
+        <label><input id="chkFixed" type="checkbox" checked>不動点を表示</label>
+      </div>
+    </section>
+
+    <section id="divSec" hidden>
+      <h2>軌道0と軌道1の距離(縦軸は対数)</h2>
+      <canvas id="chart" class="chart" role="img" aria-label="2つの軌道の距離の時間変化"></canvas>
+      <p class="note">右上がりの間は、差が指数的に広がっています。頭打ちになるのは、距離がアトラクタの大きさに達したためです。</p>
+    </section>
+
+    <div class="actions">
+      <button type="button" id="btnPause">一時停止</button>
+      <button type="button" id="btnRestart">やり直し</button>
+    </div>
+  </aside>
+</div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var cv = $('cv'), ctx = cv.getContext('2d');
+  var stage = $('stage');
+  var chartEl = $('chart'), cctx = chartEl.getContext('2d');
+  var css = getComputedStyle(document.documentElement);
+  var tok = function (n) { return css.getPropertyValue(n).trim(); };
+  var INK = tok('--ink'), INK2 = tok('--ink2'), LINE = tok('--line'), DIM = tok('--dim'), FG = tok('--fg');
+  var MONO = tok('--font-mono') || 'monospace';
+
+  var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  var PALETTE = [[255, 180, 84], [79, 214, 200], [111, 107, 255]];
+  function pal(u) {
+    var n = PALETTE.length - 1;
+    var x = Math.min(Math.max(u, 0), 1) * n;
+    var k = Math.min(Math.floor(x), n - 1);
+    var f = x - k, a = PALETTE[k], b = PALETTE[k + 1];
+    return [a[0] + (b[0] - a[0]) * f, a[1] + (b[1] - a[1]) * f, a[2] + (b[2] - a[2]) * f];
+  }
+  function rgba(c, a) { return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + a.toFixed(3) + ')'; }
+
+  var DT = 0.005, MAXP = 45000;
+  var STD = { S: 10, R: 28, B: 8 / 3 };
+  var PRESETS = {
+    single: { N: 1, L: 7000, eps: 0, note: '1つの初期値から、長い軌跡を描きます。' },
+    pair: { N: 2, L: 3500, eps: 1e-5, note: '初期値が1e-5だけ違う2本です。最初は重なって見え、やがて別々の翼へ分かれます。' },
+    swarm: { N: 160, L: 90, eps: 1e-3, note: 'ごく小さな球の中に160個の点を置きます。時間とともに全体へ引き伸ばされます。' }
+  };
+  var state = {
+    S: STD.S, R: STD.R, B: STD.B,
+    speed: reduce ? 3 : 6,
+    N: 1, L: 7000, eps: 0,
+    auto: !reduce, fixed: true, paused: false,
+    yaw: 0.5, pitch: 0.2, zoom: 1,
+    preset: 'single'
+  };
+
+  var N, L, pos, st, head, count, t, stepCount, distHist = [];
+  var sx, sy, hx, hy;
+  var styles = [], widths = [], headCols = [], Bk = 48, bs = 1, glowCols = [];
+
+  /* ---- 積分 (4次ルンゲ・クッタ) ---- */
+  function step() {
+    var S = state.S, R = state.R, B = state.B, h = DT, h2 = h / 2, h6 = h / 6;
+    for (var i = 0; i < N; i++) {
+      var x = st[3 * i], y = st[3 * i + 1], z = st[3 * i + 2];
+      var k1x = S * (y - x), k1y = x * (R - z) - y, k1z = x * y - B * z;
+      var x2 = x + h2 * k1x, y2 = y + h2 * k1y, z2 = z + h2 * k1z;
+      var k2x = S * (y2 - x2), k2y = x2 * (R - z2) - y2, k2z = x2 * y2 - B * z2;
+      x2 = x + h2 * k2x; y2 = y + h2 * k2y; z2 = z + h2 * k2z;
+      var k3x = S * (y2 - x2), k3y = x2 * (R - z2) - y2, k3z = x2 * y2 - B * z2;
+      x2 = x + h * k3x; y2 = y + h * k3y; z2 = z + h * k3z;
+      var k4x = S * (y2 - x2), k4y = x2 * (R - z2) - y2, k4z = x2 * y2 - B * z2;
+      x += h6 * (k1x + 2 * k2x + 2 * k3x + k4x);
+      y += h6 * (k1y + 2 * k2y + 2 * k3y + k4y);
+      z += h6 * (k1z + 2 * k2z + 2 * k3z + k4z);
+      st[3 * i] = x; st[3 * i + 1] = y; st[3 * i + 2] = z;
+      var o = (i * L + head) * 3;
+      pos[o] = x; pos[o + 1] = y; pos[o + 2] = z;
+    }
+    head++; if (head === L) head = 0;
+    if (count < L) count++;
+    t += h; stepCount++;
+    if (N >= 2 && stepCount % 8 === 0) {
+      var d = Math.sqrt(Math.pow(st[0] - st[3], 2) + Math.pow(st[1] - st[4], 2) + Math.pow(st[2] - st[5], 2));
+      distHist.push(t, Math.log10(Math.max(d, 1e-12)));
+      if (distHist.length > 4800) distHist.splice(0, 2400);
+    }
+  }
+
+  function warmBase() {
+    var x = 1, y = 1, z = 1, S = state.S, R = state.R, B = state.B, h = DT;
+    for (var n = 0; n < 4000; n++) {
+      var k1x = S * (y - x), k1y = x * (R - z) - y, k1z = x * y - B * z;
+      var ax = x + h / 2 * k1x, ay = y + h / 2 * k1y, az = z + h / 2 * k1z;
+      var k2x = S * (ay - ax), k2y = ax * (R - az) - ay, k2z = ax * ay - B * az;
+      ax = x + h / 2 * k2x; ay = y + h / 2 * k2y; az = z + h / 2 * k2z;
+      var k3x = S * (ay - ax), k3y = ax * (R - az) - ay, k3z = ax * ay - B * az;
+      ax = x + h * k3x; ay = y + h * k3y; az = z + h * k3z;
+      var k4x = S * (ay - ax), k4y = ax * (R - az) - ay, k4z = ax * ay - B * az;
+      x += h / 6 * (k1x + 2 * k2x + 2 * k3x + k4x);
+      y += h / 6 * (k1y + 2 * k2y + 2 * k3y + k4y);
+      z += h / 6 * (k1z + 2 * k2z + 2 * k3z + k4z);
+    }
+    return [x, y, z];
+  }
+
+  function buildStyles() {
+    Bk = N > 30 ? 8 : (N > 4 ? 20 : 48);
+    bs = Math.ceil(L / Bk);
+    styles = []; widths = []; headCols = []; glowCols = [];
+    var baseA = N === 1 ? 0.9 : (N <= 4 ? 0.85 : 0.34);
+    var wMul = N > 30 ? 0.75 : 1;
+    for (var i = 0; i < N; i++) {
+      var p = N === 1 ? 0 : (N === 2 ? i * 0.5 : (i / (N - 1)) * 0.95);
+      headCols.push(rgba(pal(p), 1));
+      glowCols.push(rgba(pal(p), 0.2));
+      for (var j = 0; j < Bk; j++) {
+        var u = Bk > 1 ? j / (Bk - 1) : 0;
+        var a = Math.pow(1 - u, 1.5) * baseA + 0.015;
+        var col = N === 1 ? pal(u) : pal(p);
+        styles.push(rgba(col, a));
+        if (i === 0) widths.push((1.9 - 1.3 * u) * wMul);
+      }
+    }
+  }
+
+  function restart(prefill) {
+    N = state.N; L = state.L;
+    pos = new Float32Array(N * L * 3);
+    st = new Float64Array(N * 3);
+    sx = new Float32Array(L); sy = new Float32Array(L);
+    hx = new Float32Array(N); hy = new Float32Array(N);
+    var b = warmBase();
+    for (var i = 0; i < N; i++) {
+      var dx = 0, dy = 0, dz = 0;
+      if (state.eps > 0 && i > 0) {
+        if (N === 2) { dx = state.eps; }
+        else {
+          var vx, vy, vz, m;
+          do { vx = Math.random() * 2 - 1; vy = Math.random() * 2 - 1; vz = Math.random() * 2 - 1; m = vx * vx + vy * vy + vz * vz; } while (m > 1 || m === 0);
+          dx = vx * state.eps; dy = vy * state.eps; dz = vz * state.eps;
+        }
+      }
+      st[3 * i] = b[0] + dx; st[3 * i + 1] = b[1] + dy; st[3 * i + 2] = b[2] + dz;
+    }
+    head = 0; count = 0; t = 0; stepCount = 0; distHist = [];
+    if (prefill) { for (var k = 0; k < L; k++) step(); t = 0; stepCount = 0; }
+    else { step(); step(); }
+    buildStyles();
+    $('divSec').hidden = N < 2;
+  }
+
+  /* ---- 描画 ---- */
+  var W = 1, H = 1, dpr = 1, bgGrad = null;
+  function resize() {
+    var r = stage.getBoundingClientRect();
+    dpr = Math.min(window.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.round(r.width * dpr));
+    H = Math.max(1, Math.round(r.height * dpr));
+    cv.width = W; cv.height = H;
+    bgGrad = ctx.createRadialGradient(W * 0.5, H * 0.5, 0, W * 0.5, H * 0.5, Math.max(W, H) * 0.7);
+    bgGrad.addColorStop(0, INK2);
+    bgGrad.addColorStop(1, INK);
+  }
+
+  function draw() {
+    ctx.globalCompositeOperation = 'source-over';
+    ctx.fillStyle = bgGrad;
+    ctx.fillRect(0, 0, W, H);
+
+    var cyaw = Math.cos(state.yaw), syaw = Math.sin(state.yaw);
+    var cp = Math.cos(state.pitch), sp = Math.sin(state.pitch);
+    var D = 130;
+    var unit = Math.min(W / 46, H / 60) * state.zoom;
+    var cx = W / 2, cy = H / 2;
+    var cz = state.R - 1;
+
+    function project(x, y, z, out) {
+      var px = x, py = y, pz = z - cz;
+      var x1 = px * cyaw - py * syaw, y1 = px * syaw + py * cyaw;
+      var y2 = y1 * cp - pz * sp, z2 = y1 * sp + pz * cp;
+      var s = unit * D / Math.max(D + y2, 10);
+      out[0] = cx + x1 * s; out[1] = cy - z2 * s;
+    }
+
+    ctx.globalCompositeOperation = 'lighter';
+    ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    var startIdx = (head - count + L) % L;
+    for (var i = 0; i < N; i++) {
+      var base = i * L;
+      for (var k = 0; k < count; k++) {
+        var idx = startIdx + k; if (idx >= L) idx -= L;
+        var o = (base + idx) * 3;
+        var px = pos[o], py = pos[o + 1], pz = pos[o + 2] - cz;
+        var x1 = px * cyaw - py * syaw, y1 = px * syaw + py * cyaw;
+        var y2 = y1 * cp - pz * sp, z2 = y1 * sp + pz * cp;
+        var s = unit * D / Math.max(D + y2, 10);
+        sx[k] = cx + x1 * s; sy[k] = cy - z2 * s;
+      }
+      if (count > 0) { hx[i] = sx[count - 1]; hy[i] = sy[count - 1]; }
+      for (var j = 0; j < Bk; j++) {
+        var end = count - 1 - j * bs;
+        if (end <= 0) break;
+        var start = Math.max(0, end - bs);
+        ctx.beginPath();
+        ctx.moveTo(sx[start], sy[start]);
+        for (var q = start + 1; q <= end; q++) ctx.lineTo(sx[q], sy[q]);
+        ctx.strokeStyle = styles[i * Bk + j];
+        ctx.lineWidth = widths[j] * dpr;
+        ctx.stroke();
+      }
+    }
+
+    /* 先頭の点 */
+    if (count > 0) {
+      for (var m = 0; m < N; m++) {
+        if (N <= 4) {
+          ctx.fillStyle = glowCols[m];
+          ctx.beginPath(); ctx.arc(hx[m], hy[m], 10 * dpr, 0, 6.2832); ctx.fill();
+          ctx.fillStyle = 'rgba(255,255,255,0.95)';
+          ctx.beginPath(); ctx.arc(hx[m], hy[m], 2.3 * dpr, 0, 6.2832); ctx.fill();
+        } else {
+          ctx.fillStyle = headCols[m];
+          ctx.beginPath(); ctx.arc(hx[m], hy[m], 1.5 * dpr, 0, 6.2832); ctx.fill();
+        }
+      }
+    }
+
+    /* 不動点 */
+    ctx.globalCompositeOperation = 'source-over';
+    if (state.fixed) {
+      var out = [0, 0];
+      ctx.lineWidth = 1 * dpr;
+      ctx.font = (11 * dpr) + 'px ' + MONO;
+      project(0, 0, 0, out);
+      ctx.strokeStyle = 'rgba(135,148,174,0.45)';
+      ctx.beginPath(); ctx.arc(out[0], out[1], 3.5 * dpr, 0, 6.2832); ctx.stroke();
+      if (state.R > 1) {
+        var c = Math.sqrt(state.B * (state.R - 1));
+        var signs = [1, -1], names = ['C₊', 'C₋'];
+        for (var f = 0; f < 2; f++) {
+          project(signs[f] * c, signs[f] * c, state.R - 1, out);
+          ctx.strokeStyle = 'rgba(255,180,84,0.6)';
+          ctx.beginPath(); ctx.arc(out[0], out[1], 5.5 * dpr, 0, 6.2832); ctx.stroke();
+          ctx.fillStyle = DIM;
+          ctx.fillText(names[f], out[0] + 9 * dpr, out[1] - 7 * dpr);
+        }
+      }
+    }
+  }
+
+  /* 2点の距離グラフ */
+  function drawChart() {
+    if (N < 2) return;
+    var r = chartEl.getBoundingClientRect();
+    if (r.width < 10) return;
+    var d = Math.min(window.devicePixelRatio || 1, 2);
+    var cw = Math.round(r.width * d), ch = Math.round(r.height * d);
+    if (chartEl.width !== cw || chartEl.height !== ch) { chartEl.width = cw; chartEl.height = ch; }
+    var g = cctx;
+    g.setTransform(d, 0, 0, d, 0, 0);
+    var w = r.width, h = r.height;
+    g.clearRect(0, 0, w, h);
+    var padL = 38, padR = 8, padT = 8, padB = 18;
+    var ymin = -8, ymax = 2.4, win = 30;
+    var xmax = Math.max(win, t), xmin = xmax - win;
+    function X(v) { return padL + (v - xmin) / win * (w - padL - padR); }
+    function Y(v) { return h - padB - (Math.min(Math.max(v, ymin), ymax) - ymin) / (ymax - ymin) * (h - padT - padB); }
+    g.font = '10px ' + MONO;
+    g.textBaseline = 'middle';
+    g.textAlign = 'right';
+    var ticks = [-8, -6, -4, -2, 0, 2], labels = ['10⁻⁸', '10⁻⁶', '10⁻⁴', '10⁻²', '1', '10²'];
+    g.lineWidth = 1;
+    for (var i = 0; i < ticks.length; i++) {
+      var y = Math.round(Y(ticks[i])) + 0.5;
+      g.strokeStyle = LINE;
+      g.beginPath(); g.moveTo(padL, y); g.lineTo(w - padR, y); g.stroke();
+      g.fillStyle = DIM;
+      g.fillText(labels[i], padL - 6, y);
+    }
+    g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+    g.fillStyle = DIM;
+    g.fillText('t = ' + xmin.toFixed(0), padL, h - 4);
+    g.textAlign = 'right';
+    g.fillText(xmax.toFixed(0), w - padR, h - 4);
+    g.strokeStyle = tok('--teal');
+    g.lineWidth = 1.6;
+    g.lineJoin = 'round';
+    g.beginPath();
+    var first = true, lx = 0, ly = 0;
+    for (var k = 0; k < distHist.length; k += 2) {
+      if (distHist[k] < xmin) continue;
+      lx = X(distHist[k]); ly = Y(distHist[k + 1]);
+      if (first) { g.moveTo(lx, ly); first = false; } else g.lineTo(lx, ly);
+    }
+    g.stroke();
+    if (!first) {
+      g.fillStyle = tok('--amber');
+      g.beginPath(); g.arc(lx, ly, 3, 0, 6.2832); g.fill();
+    }
+  }
+
+  /* ---- 操作 ---- */
+  var ptrs = new Map(), lastDist = 0;
+  function clamp(v, a, b) { return Math.min(Math.max(v, a), b); }
+  function pdist() {
+    var a = Array.from(ptrs.values());
+    return Math.hypot(a[0].x - a[1].x, a[0].y - a[1].y);
+  }
+  cv.addEventListener('pointerdown', function (e) {
+    try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size === 2) lastDist = pdist();
+  });
+  cv.addEventListener('pointermove', function (e) {
+    var p = ptrs.get(e.pointerId);
+    if (!p) return;
+    var dx = e.clientX - p.x, dy = e.clientY - p.y;
+    p.x = e.clientX; p.y = e.clientY;
+    if (ptrs.size === 1) {
+      state.yaw += dx * 0.006;
+      state.pitch = clamp(state.pitch + dy * 0.006, -1.4, 1.4);
+    } else if (ptrs.size === 2) {
+      var d = pdist();
+      if (lastDist > 0) state.zoom = clamp(state.zoom * d / lastDist, 0.4, 4);
+      lastDist = d;
+    }
+  });
+  function endPtr(e) { ptrs.delete(e.pointerId); lastDist = 0; }
+  cv.addEventListener('pointerup', endPtr);
+  cv.addEventListener('pointercancel', endPtr);
+  cv.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    state.zoom = clamp(state.zoom * Math.exp(-e.deltaY * 0.001), 0.4, 4);
+  }, { passive: false });
+
+  function fmtS(v) { return v.toFixed(1); }
+  function syncOutputs() {
+    $('outS').textContent = fmtS(state.S);
+    $('outR').textContent = fmtS(state.R);
+    $('outB').textContent = state.B.toFixed(3);
+    $('outSpeed').textContent = state.speed + ' 歩/フレーム';
+    $('outL').textContent = state.L + ' 点';
+    $('outN').textContent = state.N + ' 本';
+  }
+  function syncSliders() {
+    $('inS').value = state.S; $('inR').value = state.R; $('inB').value = state.B;
+    $('inSpeed').value = state.speed; $('inL').value = state.L; $('inN').value = state.N;
+    syncOutputs();
+  }
+  function setPresetButtons() {
+    var btns = document.querySelectorAll('[data-preset]');
+    for (var i = 0; i < btns.length; i++) {
+      btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-preset') === state.preset ? 'true' : 'false');
+    }
+    $('presetNote').textContent = state.preset && PRESETS[state.preset] ? PRESETS[state.preset].note : '軌道の数と長さを自分で決めています。';
+  }
+  function applyPreset(name) {
+    var p = PRESETS[name];
+    state.preset = name; state.N = p.N; state.L = p.L; state.eps = p.eps;
+    syncSliders(); setPresetButtons();
+    restart(name === 'single');
+  }
+  var presetBtns = document.querySelectorAll('[data-preset]');
+  for (var pi = 0; pi < presetBtns.length; pi++) {
+    presetBtns[pi].addEventListener('click', function (e) { applyPreset(e.currentTarget.getAttribute('data-preset')); });
+  }
+
+  $('inS').addEventListener('input', function (e) { state.S = parseFloat(e.target.value); syncOutputs(); });
+  $('inR').addEventListener('input', function (e) { state.R = parseFloat(e.target.value); syncOutputs(); });
+  $('inB').addEventListener('input', function (e) { state.B = parseFloat(e.target.value); syncOutputs(); });
+  $('btnStd').addEventListener('click', function () {
+    state.S = STD.S; state.R = STD.R; state.B = STD.B; syncSliders();
+  });
+  $('inSpeed').addEventListener('input', function (e) { state.speed = parseInt(e.target.value, 10); syncOutputs(); });
+  $('inL').addEventListener('input', function (e) {
+    state.L = parseInt(e.target.value, 10);
+    if (state.N * state.L > MAXP) state.N = Math.max(1, Math.floor(MAXP / state.L));
+    state.preset = ''; if (state.N >= 2 && state.eps === 0) state.eps = 1e-4; if (state.N === 1) state.eps = 0;
+    syncSliders(); setPresetButtons(); restart(state.N === 1);
+  });
+  $('inN').addEventListener('input', function (e) {
+    state.N = parseInt(e.target.value, 10);
+    if (state.N * state.L > MAXP) state.L = Math.max(20, Math.floor(MAXP / state.N / 10) * 10);
+    state.preset = ''; if (state.N >= 2 && state.eps === 0) state.eps = 1e-4; if (state.N === 1) state.eps = 0;
+    syncSliders(); setPresetButtons(); restart(state.N === 1);
+  });
+  $('chkAuto').checked = state.auto;
+  $('chkAuto').addEventListener('change', function (e) { state.auto = e.target.checked; });
+  $('chkFixed').addEventListener('change', function (e) { state.fixed = e.target.checked; });
+  $('btnPause').addEventListener('click', function (e) {
+    state.paused = !state.paused;
+    e.currentTarget.textContent = state.paused ? '再開' : '一時停止';
+  });
+  $('btnRestart').addEventListener('click', function () { restart(state.N === 1); });
+
+  /* ---- ループ ---- */
+  var frameNo = 0;
+  var readout = $('readout');
+  function frame() {
+    if (!state.paused) {
+      for (var s = 0; s < state.speed; s++) step();
+      if (!isFinite(st[0]) || !isFinite(st[1]) || !isFinite(st[2])) restart(state.N === 1);
+    }
+    if (state.auto) state.yaw += 0.0025;
+    draw();
+    if (frameNo % 6 === 0) {
+      var txt = 't = ' + t.toFixed(1) + '   σ ' + state.S.toFixed(1) + '   ρ ' + state.R.toFixed(1) + '   β ' + state.B.toFixed(3);
+      if (N >= 2) txt += '   初期の差 ' + state.eps.toExponential(0);
+      readout.textContent = txt;
+      drawChart();
+    }
+    frameNo++;
+    requestAnimationFrame(frame);
+  }
+
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(stage);
+  window.addEventListener('resize', resize);
+  resize();
+  syncSliders();
+  setPresetButtons();
+  restart(true);
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
