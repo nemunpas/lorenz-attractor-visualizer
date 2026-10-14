@@ -55,11 +55,11 @@ Try lowering ρ to about 10: the orbit no longer wanders between the two lobes a
 
 ## Usage
 
-Open `lorenz.html` in a modern browser. There is no build step and nothing to install.
+Open `index.html` in a modern browser. There is no build step and nothing to install.
 
 Fonts are loaded from Google Fonts. Offline, the page falls back to system fonts and works the same.
 
-To host it, upload the single file to any static web host. For GitHub Pages, rename it to `index.html` and enable Pages for the repository.
+To host it, upload the single file to any static web host. For GitHub Pages, just enable Pages for the repository; the file is already named `index.html`.
 
 If you share the page somewhere that shows link cards, add an `og:image` tag to the `<head>`. A commented-out example is already in the file.
 
