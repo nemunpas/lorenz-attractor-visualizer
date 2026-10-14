@@ -3,7 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>ローレンツ・アトラクタ</title>
+<title>ローレンツ・アトラクタ / Lorenz Attractor</title>
+<meta name="description" content="ローレンツ・アトラクタをブラウザで動かして眺めるビジュアライザー。Interactive Lorenz attractor visualizer that runs in the browser (Japanese / English).">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Shippori+Mincho:wght@500;700&family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap">
@@ -18,7 +19,7 @@
   --amber: #ffb454;
   --teal: #4fd6c8;
   --violet: #6f6bff;
-  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", serif;
+  --font-display: "Shippori Mincho", "Hiragino Mincho ProN", "Yu Mincho", Georgia, serif;
   --font-body: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
   color-scheme: dark;
@@ -90,6 +91,9 @@ body {
   letter-spacing: 0.1em;
 }
 .seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.langbar { margin-bottom: -6px; }
+.langbar .seg { justify-content: flex-end; }
+.langbar button { padding: 3px 10px; font-size: 12px; }
 button {
   font: inherit; color: var(--fg);
   background: transparent;
@@ -135,55 +139,62 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
 
 <div class="app">
   <main class="stage" id="stage">
-    <canvas id="cv" role="img" aria-label="ローレンツ方程式の解が描く蝶の形の軌跡"></canvas>
+    <canvas id="cv" role="img" data-i18n-aria="canvasAria"></canvas>
     <div class="title">
-      <h1>ローレンツ・アトラクタ</h1>
+      <h1 data-i18n="title"></h1>
       <p class="eq">dx/dt = σ(y − x)<br>dy/dt = x(ρ − z) − y<br>dz/dt = xy − βz</p>
     </div>
-    <div class="hint">ドラッグで回転 / ホイールかピンチで拡大</div>
+    <div class="hint" data-i18n="hint"></div>
     <div class="readout" id="readout"></div>
   </main>
 
-  <aside class="panel" aria-label="操作パネル">
+  <aside class="panel" data-i18n-aria="panelAria">
+    <section class="langbar">
+      <div class="seg" role="group" aria-label="言語 / Language">
+        <button type="button" data-lang="ja" aria-pressed="false" lang="ja">日本語</button>
+        <button type="button" data-lang="en" aria-pressed="false" lang="en">English</button>
+      </div>
+    </section>
+
     <section>
-      <h2>見せ方</h2>
-      <div class="seg" role="group" aria-label="プリセット">
-        <button type="button" data-preset="single" aria-pressed="true">一本の軌跡</button>
-        <button type="button" data-preset="pair" aria-pressed="false">ほぼ同じ2点</button>
-        <button type="button" data-preset="swarm" aria-pressed="false">点の群れ</button>
+      <h2 data-i18n="viewH"></h2>
+      <div class="seg" role="group" data-i18n-aria="presetsAria">
+        <button type="button" data-preset="single" aria-pressed="true" data-i18n="pSingle"></button>
+        <button type="button" data-preset="pair" aria-pressed="false" data-i18n="pPair"></button>
+        <button type="button" data-preset="swarm" aria-pressed="false" data-i18n="pSwarm"></button>
       </div>
       <p class="note" id="presetNote"></p>
     </section>
 
     <section>
-      <h2>方程式の係数</h2>
-      <div class="row"><label for="inS">σ(プラントル数)</label><output id="outS"></output><input id="inS" type="range" min="0.5" max="30" step="any" value="10"></div>
-      <div class="row"><label for="inR">ρ(加熱の強さ)</label><output id="outR"></output><input id="inR" type="range" min="0.5" max="60" step="any" value="28"></div>
-      <div class="row"><label for="inB">β(形状係数)</label><output id="outB"></output><input id="inB" type="range" min="0.3" max="6" step="any" value="2.6666667"></div>
-      <div class="actions"><button type="button" id="btnStd">標準値に戻す</button></div>
-      <p class="note">ρを10前後まで下げると、軌道は不動点C₊かC₋に落ち着きます。</p>
+      <h2 data-i18n="paramsH"></h2>
+      <div class="row"><label for="inS" data-i18n="lblS"></label><output id="outS"></output><input id="inS" type="range" min="0.5" max="30" step="any" value="10"></div>
+      <div class="row"><label for="inR" data-i18n="lblR"></label><output id="outR"></output><input id="inR" type="range" min="0.5" max="60" step="any" value="28"></div>
+      <div class="row"><label for="inB" data-i18n="lblB"></label><output id="outB"></output><input id="inB" type="range" min="0.3" max="6" step="any" value="2.6666667"></div>
+      <div class="actions"><button type="button" id="btnStd" data-i18n="btnStd"></button></div>
+      <p class="note" data-i18n="noteRho"></p>
     </section>
 
     <section>
-      <h2>描画</h2>
-      <div class="row"><label for="inSpeed">進む速さ</label><output id="outSpeed"></output><input id="inSpeed" type="range" min="1" max="20" step="1" value="6"></div>
-      <div class="row"><label for="inL">軌跡の長さ</label><output id="outL"></output><input id="inL" type="range" min="20" max="12000" step="10" value="7000"></div>
-      <div class="row"><label for="inN">軌道の数</label><output id="outN"></output><input id="inN" type="range" min="1" max="300" step="1" value="1"></div>
+      <h2 data-i18n="drawH"></h2>
+      <div class="row"><label for="inSpeed" data-i18n="lblSpeed"></label><output id="outSpeed"></output><input id="inSpeed" type="range" min="1" max="20" step="1" value="6"></div>
+      <div class="row"><label for="inL" data-i18n="lblL"></label><output id="outL"></output><input id="inL" type="range" min="20" max="12000" step="10" value="7000"></div>
+      <div class="row"><label for="inN" data-i18n="lblN"></label><output id="outN"></output><input id="inN" type="range" min="1" max="300" step="1" value="1"></div>
       <div class="checks">
-        <label><input id="chkAuto" type="checkbox" checked>自動で回す</label>
-        <label><input id="chkFixed" type="checkbox" checked>不動点を表示</label>
+        <label><input id="chkAuto" type="checkbox" checked><span data-i18n="chkAuto"></span></label>
+        <label><input id="chkFixed" type="checkbox" checked><span data-i18n="chkFixed"></span></label>
       </div>
     </section>
 
     <section id="divSec" hidden>
-      <h2>軌道0と軌道1の距離(縦軸は対数)</h2>
-      <canvas id="chart" class="chart" role="img" aria-label="2つの軌道の距離の時間変化"></canvas>
-      <p class="note">右上がりの間は、差が指数的に広がっています。頭打ちになるのは、距離がアトラクタの大きさに達したためです。</p>
+      <h2 data-i18n="chartH"></h2>
+      <canvas id="chart" class="chart" role="img" data-i18n-aria="chartAria"></canvas>
+      <p class="note" data-i18n="chartNote"></p>
     </section>
 
     <div class="actions">
-      <button type="button" id="btnPause">一時停止</button>
-      <button type="button" id="btnRestart">やり直し</button>
+      <button type="button" id="btnPause"></button>
+      <button type="button" id="btnRestart" data-i18n="restart"></button>
     </div>
   </aside>
 </div>
@@ -201,6 +212,102 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
 
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  /* ---- 表示言語 (日本語 / English) ---- */
+  var T = {
+    ja: {
+      title: 'ローレンツ・アトラクタ',
+      canvasAria: 'ローレンツ方程式の解が描く蝶の形の軌跡',
+      hint: 'ドラッグで回転 / ホイールかピンチで拡大',
+      panelAria: '操作パネル',
+      viewH: '見せ方',
+      presetsAria: 'プリセット',
+      pSingle: '一本の軌跡',
+      pPair: 'ほぼ同じ2点',
+      pSwarm: '点の群れ',
+      noteSingle: '1つの初期値から、長い軌跡を描きます。',
+      notePair: '初期値が1e-5だけ違う2本です。最初は重なって見え、やがて別々の翼へ分かれます。',
+      noteSwarm: 'ごく小さな球の中に160個の点を置きます。時間とともに全体へ引き伸ばされます。',
+      noteCustom: '軌道の数と長さを自分で決めています。',
+      paramsH: '方程式の係数',
+      lblS: 'σ(プラントル数)',
+      lblR: 'ρ(加熱の強さ)',
+      lblB: 'β(形状係数)',
+      btnStd: '標準値に戻す',
+      noteRho: 'ρを10前後まで下げると、軌道は不動点C₊かC₋に落ち着きます。',
+      drawH: '描画',
+      lblSpeed: '進む速さ',
+      lblL: '軌跡の長さ',
+      lblN: '軌道の数',
+      unitSpeed: '{n} 歩/フレーム',
+      unitL: '{n} 点',
+      unitN: '{n} 本',
+      chkAuto: '自動で回す',
+      chkFixed: '不動点を表示',
+      chartH: '軌道0と軌道1の距離(縦軸は対数)',
+      chartAria: '2つの軌道の距離の時間変化',
+      chartNote: '右上がりの間は、差が指数的に広がっています。頭打ちになるのは、距離がアトラクタの大きさに達したためです。',
+      pause: '一時停止',
+      resume: '再開',
+      restart: 'やり直し',
+      gap: '初期の差'
+    },
+    en: {
+      title: 'Lorenz Attractor',
+      canvasAria: 'A butterfly-shaped trajectory traced by the Lorenz equations',
+      hint: 'Drag to rotate · wheel or pinch to zoom',
+      panelAria: 'Controls',
+      viewH: 'View',
+      presetsAria: 'Presets',
+      pSingle: 'One trajectory',
+      pPair: 'Two nearly identical points',
+      pSwarm: 'A swarm',
+      noteSingle: 'One long trail from a single starting point.',
+      notePair: 'Two orbits whose starting values differ by only 1e-5. They overlap at first, then split into different lobes.',
+      noteSwarm: '160 points placed inside a tiny ball, stretched across the whole attractor over time.',
+      noteCustom: 'You are setting the number of orbits and the trail length yourself.',
+      paramsH: 'Equation parameters',
+      lblS: 'σ (Prandtl number)',
+      lblR: 'ρ (heating strength)',
+      lblB: 'β (geometry factor)',
+      btnStd: 'Reset to standard values',
+      noteRho: 'Lower ρ to about 10 and the orbit settles onto the fixed point C₊ or C₋.',
+      drawH: 'Drawing',
+      lblSpeed: 'Speed',
+      lblL: 'Trail length',
+      lblN: 'Number of orbits',
+      unitSpeed: '{n} steps/frame',
+      unitL: '{n} pts',
+      unitN: '{n}',
+      chkAuto: 'Auto-rotate',
+      chkFixed: 'Show fixed points',
+      chartH: 'Distance between orbit 0 and orbit 1 (log scale)',
+      chartAria: 'Distance between two orbits over time',
+      chartNote: 'While the line rises, the gap is growing exponentially. It flattens once the distance reaches the size of the attractor.',
+      pause: 'Pause',
+      resume: 'Resume',
+      restart: 'Restart',
+      gap: 'initial gap'
+    }
+  };
+  var LANG_KEY = 'lorenz-lang';
+  function detectLang() {
+    try {
+      var q = new URLSearchParams(location.search).get('lang');
+      if (q === 'ja' || q === 'en') return q;
+    } catch (e) {}
+    try {
+      var s = localStorage.getItem(LANG_KEY);
+      if (s === 'ja' || s === 'en') return s;
+    } catch (e) {}
+    var nl = (navigator.languages && navigator.languages[0]) || navigator.language || '';
+    return /^ja/i.test(nl) ? 'ja' : 'en';
+  }
+  var lang = detectLang();
+  function tr(key, n) {
+    var s = (T[lang] && T[lang][key]) || T.ja[key] || key;
+    return n === undefined ? s : s.replace('{n}', n);
+  }
+
   var PALETTE = [[255, 180, 84], [79, 214, 200], [111, 107, 255]];
   function pal(u) {
     var n = PALETTE.length - 1;
@@ -214,9 +321,9 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
   var DT = 0.005, MAXP = 45000;
   var STD = { S: 10, R: 28, B: 8 / 3 };
   var PRESETS = {
-    single: { N: 1, L: 7000, eps: 0, note: '1つの初期値から、長い軌跡を描きます。' },
-    pair: { N: 2, L: 3500, eps: 1e-5, note: '初期値が1e-5だけ違う2本です。最初は重なって見え、やがて別々の翼へ分かれます。' },
-    swarm: { N: 160, L: 90, eps: 1e-3, note: 'ごく小さな球の中に160個の点を置きます。時間とともに全体へ引き伸ばされます。' }
+    single: { N: 1, L: 7000, eps: 0, noteKey: 'noteSingle' },
+    pair: { N: 2, L: 3500, eps: 1e-5, noteKey: 'notePair' },
+    swarm: { N: 160, L: 90, eps: 1e-3, noteKey: 'noteSwarm' }
   };
   var state = {
     S: STD.S, R: STD.R, B: STD.B,
@@ -512,9 +619,9 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
     $('outS').textContent = fmtS(state.S);
     $('outR').textContent = fmtS(state.R);
     $('outB').textContent = state.B.toFixed(3);
-    $('outSpeed').textContent = state.speed + ' 歩/フレーム';
-    $('outL').textContent = state.L + ' 点';
-    $('outN').textContent = state.N + ' 本';
+    $('outSpeed').textContent = tr('unitSpeed', state.speed);
+    $('outL').textContent = tr('unitL', state.L);
+    $('outN').textContent = tr('unitN', state.N);
   }
   function syncSliders() {
     $('inS').value = state.S; $('inR').value = state.R; $('inB').value = state.B;
@@ -526,7 +633,21 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
     for (var i = 0; i < btns.length; i++) {
       btns[i].setAttribute('aria-pressed', btns[i].getAttribute('data-preset') === state.preset ? 'true' : 'false');
     }
-    $('presetNote').textContent = state.preset && PRESETS[state.preset] ? PRESETS[state.preset].note : '軌道の数と長さを自分で決めています。';
+    $('presetNote').textContent = tr(state.preset && PRESETS[state.preset] ? PRESETS[state.preset].noteKey : 'noteCustom');
+  }
+  function updatePauseLabel() {
+    $('btnPause').textContent = tr(state.paused ? 'resume' : 'pause');
+  }
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.title = tr('title') + ' / ' + (lang === 'ja' ? T.en.title : T.ja.title);
+    var els = document.querySelectorAll('[data-i18n]');
+    for (var i = 0; i < els.length; i++) els[i].textContent = tr(els[i].getAttribute('data-i18n'));
+    var arias = document.querySelectorAll('[data-i18n-aria]');
+    for (var j = 0; j < arias.length; j++) arias[j].setAttribute('aria-label', tr(arias[j].getAttribute('data-i18n-aria')));
+    var lbs = document.querySelectorAll('[data-lang]');
+    for (var k = 0; k < lbs.length; k++) lbs[k].setAttribute('aria-pressed', lbs[k].getAttribute('data-lang') === lang ? 'true' : 'false');
+    syncOutputs(); setPresetButtons(); updatePauseLabel();
   }
   function applyPreset(name) {
     var p = PRESETS[name];
@@ -537,6 +658,19 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
   var presetBtns = document.querySelectorAll('[data-preset]');
   for (var pi = 0; pi < presetBtns.length; pi++) {
     presetBtns[pi].addEventListener('click', function (e) { applyPreset(e.currentTarget.getAttribute('data-preset')); });
+  }
+  var langBtns = document.querySelectorAll('[data-lang]');
+  for (var li = 0; li < langBtns.length; li++) {
+    langBtns[li].addEventListener('click', function (e) {
+      lang = e.currentTarget.getAttribute('data-lang');
+      try { localStorage.setItem(LANG_KEY, lang); } catch (err) {}
+      try {
+        var u = new URL(location.href);
+        u.searchParams.set('lang', lang);
+        history.replaceState(null, '', u.toString());
+      } catch (err) {}
+      applyLang();
+    });
   }
 
   $('inS').addEventListener('input', function (e) { state.S = parseFloat(e.target.value); syncOutputs(); });
@@ -561,9 +695,9 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
   $('chkAuto').checked = state.auto;
   $('chkAuto').addEventListener('change', function (e) { state.auto = e.target.checked; });
   $('chkFixed').addEventListener('change', function (e) { state.fixed = e.target.checked; });
-  $('btnPause').addEventListener('click', function (e) {
+  $('btnPause').addEventListener('click', function () {
     state.paused = !state.paused;
-    e.currentTarget.textContent = state.paused ? '再開' : '一時停止';
+    updatePauseLabel();
   });
   $('btnRestart').addEventListener('click', function () { restart(state.N === 1); });
 
@@ -579,7 +713,7 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
     draw();
     if (frameNo % 6 === 0) {
       var txt = 't = ' + t.toFixed(1) + '   σ ' + state.S.toFixed(1) + '   ρ ' + state.R.toFixed(1) + '   β ' + state.B.toFixed(3);
-      if (N >= 2) txt += '   初期の差 ' + state.eps.toExponential(0);
+      if (N >= 2) txt += '   ' + tr('gap') + ' ' + state.eps.toExponential(0);
       readout.textContent = txt;
       drawChart();
     }
@@ -591,7 +725,7 @@ input[type=checkbox] { accent-color: var(--amber); width: 15px; height: 15px; ma
   window.addEventListener('resize', resize);
   resize();
   syncSliders();
-  setPresetButtons();
+  applyLang();
   restart(true);
   requestAnimationFrame(frame);
 })();
