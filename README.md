@@ -4,7 +4,7 @@ English | [日本語](README.ja.md)
 
 A single-file, dependency-free visualizer for the Lorenz attractor. It integrates the Lorenz equations in real time in your browser and draws the trajectory in 3D. You can rotate it, change the parameters, and watch two almost identical starting points drift apart (the butterfly effect).
 
-> The interface and the built-in explanation are in Japanese.
+> The interface is in Japanese.
 
 ## What it shows
 
@@ -26,7 +26,6 @@ With the classic values σ = 10, ρ = 28, β = 8/3, the system is chaotic. There
 - Live sliders for σ, ρ, β, simulation speed, trail length, and the number of orbits
 - A log-scale plot of the distance between two orbits (shown when two or more orbits are running)
 - Markers for the fixed points C₊ and C₋ (can be switched off)
-- A short built-in explanation for beginners (in Japanese)
 - Respects `prefers-reduced-motion`: auto-rotation starts off and the default speed is lower
 
 ## Presets
@@ -61,7 +60,7 @@ Fonts are loaded from Google Fonts. Offline, the page falls back to system fonts
 
 To host it, upload the single file to any static web host. For GitHub Pages, just enable Pages for the repository; the file is already named `index.html`.
 
-If you share the page somewhere that shows link cards, add an `og:image` tag to the `<head>`. A commented-out example is already in the file.
+If you share the page somewhere that shows link cards, add Open Graph tags (`og:title`, `og:description`, `og:image`) to the `<head>`.
 
 ## Notes
 
